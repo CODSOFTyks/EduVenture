@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>KBC Quiz Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #ffdd00, #ff9900);
+      
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      background: #fff;
+      border-radius: 15px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+      padding: 30px;
+      margin-top: 40px;
+      max-width: 700px;
+      text-align: center;
+    }
+    h1 {
+      margin-bottom: 20px;
+      color: #ff9900;
+    }
+    #question {
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+    .option-btn {
+      display: block;
+      width: 100%;
+      margin: 8px 0;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 2px solid #ff9900;
+      cursor: pointer;
+      background: #fff;
+      transition: 0.3s;
+    }
+    .option-btn:hover {
+      background: #ff9900;
+      color: #fff;
+    }
+    #score {
+      margin-top: 15px;
+      font-weight: bold;
+      color: #333;
+    }
+    #backBtn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      background: #0077ff;
+      color: #fff;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    #backBtn:hover {
+      background: #0056cc;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🎯 KBC Quiz Game</h1>
+  <div id="question">Loading question...</div>
+  <button class="option-btn" id="optionA"></button>
+  <button class="option-btn" id="optionB"></button>
+  <button class="option-btn" id="optionC"></button>
+  <button class="option-btn" id="optionD"></button>
+  <div id="score">Score: 0</div>
+  <button id="backBtn" onclick="window.location.href='nsns.html'">⬅ Back to App</button>
+</div>
+
+<script>
+const quiz = [
+  {
+    q: "What is the capital of India?",
+    options: ["New Delhi", "Mumbai", "Kolkata", "Chennai"],
+    answer: 0
+  },
+  {
+    q: "Which planet is known as the Red Planet?",
+    options: ["Earth", "Mars", "Venus", "Jupiter"],
+    answer: 1
+  },
+  {
+    q: "Who wrote 'Harry Potter'?",
+    options: ["J.K. Rowling", "J.R.R. Tolkien", "C.S. Lewis", "Roald Dahl"],
+    answer: 0
+  }
+];
+
+let currentQuestion = 0;
+let score = 0;
+
+function loadQuestion() {
+  if (currentQuestion >= quiz.length) {
+    document.getElementById("question").textContent = "Quiz Completed!";
+    document.getElementById("optionA").style.display = "none";
+    document.getElementById("optionB").style.display = "none";
+    document.getElementById("optionC").style.display = "none";
+    document.getElementById("optionD").style.display = "none";
+    return;
+  }
+  const q = quiz[currentQuestion];
+  document.getElementById("question").textContent = q.q;
+  document.getElementById("optionA").textContent = q.options[0];
+  document.getElementById("optionB").textContent = q.options[1];
+  document.getElementById("optionC").textContent = q.options[2];
+  document.getElementById("optionD").textContent = q.options[3];
+}
+
+function checkAnswer(index) {
+  if (index === quiz[currentQuestion].answer) {
+    score++;
+  }
+  currentQuestion++;
+  document.getElementById("score").textContent = "Score: " + score;
+  loadQuestion();
+}
+
+// Assign click events
+document.getElementById("optionA").onclick = () => checkAnswer(0);
+document.getElementById("optionB").onclick = () => checkAnswer(1);
+document.getElementById("optionC").onclick = () => checkAnswer(2);
+document.getElementById("optionD").onclick = () => checkAnswer(3);
+
+// Initial load
+loadQuestion();
+</script>
+</body>
+</html>

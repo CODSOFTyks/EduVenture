@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Guess the Image Game</title>
+<style>
+  body {
+      margin:0;
+      padding:0;
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(to right, #74ebd5, #ACB6E5);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      min-height:100vh;
+  }
+
+  h2 {
+      margin-top:40px;
+      color:#003366;
+      text-shadow: 1px 1px 3px #aaa;
+  }
+
+  #gameContainer {
+      margin-top:30px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      background: rgba(255,255,255,0.2);
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  }
+
+  #guessCanvas {
+      border:3px solid #003366;
+      border-radius:15px;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+  }
+
+  #controls {
+      margin-top:20px;
+      display:flex;
+      gap:10px;
+  }
+
+  #guessInput {
+      padding:10px;
+      border-radius:10px;
+      border:2px solid #003366;
+      width:220px;
+      font-size:16px;
+  }
+
+  #guessBtn {
+      padding:10px 20px;
+      border:none;
+      border-radius:10px;
+      background: #003366;
+      color:white;
+      cursor:pointer;
+      font-weight:bold;
+      box-shadow:0 4px 10px rgba(0,0,0,0.3);
+      transition: 0.2s;
+      font-size:16px;
+  }
+
+  #guessBtn:hover {
+      transform: scale(1.05);
+  }
+
+  #feedback {
+      margin-top:20px;
+      font-size:18px;
+      font-weight:bold;
+      color:#003366;
+  }
+
+</style>
+</head>
+<body>
+
+<h2>Guess the Image Game</h2>
+<div id="gameContainer">
+    <canvas id="guessCanvas" width="400" height="300"></canvas>
+    <div id="controls">
+        <input type="text" id="guessInput" placeholder="Type your guess here">
+        <button id="guessBtn">Submit</button>
+    </div>
+    <p id="feedback"></p>
+</div>
+
+<script>
+const canvas = document.getElementById("guessCanvas");
+const ctx = canvas.getContext("2d");
+const feedback = document.getElementById("feedback");
+
+// Array of images and answers (can be updated with math diagrams or relevant images)
+const images = [
+    {src:"https://picsum.photos/400/300?random=101", answer:"tree"},
+    {src:"https://picsum.photos/400/300?random=102", answer:"mountain"},
+    {src:"https://picsum.photos/400/300?random=103", answer:"river"}
+];
+
+let current = 0;
+const img = new Image();
+img.src = images[current].src;
+img.onload = () => {
+    ctx.filter = 'blur(8px)'; // initial blur
+    ctx.drawImage(img,0,0,canvas.width,canvas.height);
+};
+
+// Handle guess submission
+document.getElementById("guessBtn").addEventListener("click", () => {
+    const guess = document.getElementById("guessInput").value.toLowerCase();
+    if(guess === images[current].answer){
+        feedback.textContent = "✅ Correct!";
+        feedback.style.color = "green";
+        ctx.filter = "none"; // reveal image
+        ctx.drawImage(img,0,0,canvas.width,canvas.height);
+    } else {
+        feedback.textContent = "❌ Try again!";
+        feedback.style.color = "red";
+    }
+});
+</script>
+
+</body>
+</html>
