@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Smart Learning App — Full</title>
+
+<!-- TensorFlow.js + Pose Detection for Pose Game -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.9.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+
+<style>
+:root{
+  --brand:#1db954;
+  --nav:#2f3e46;
+  --card:#ffffff;
+  --muted:#6c757d;
+  --bg:#f3f6f8;
+  --accent:#ffb703;
+}
+*{box-sizing:border-box}
+body {
+  /* Vibrant gradient background */
+  background: linear-gradient(135deg, #6a11cb, #2575fc, #ff7e5f, #feb47b);
+  background-size: 400% 400%;
+  animation: gradientAnimation 15s ease infinite;
+  font-family: 'Poppins', Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  color: #333;
+}
+
+/* Smooth animated gradient */
+@keyframes gradientAnimation {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Keep all cards readable */
+.feature-card, .quote-card, .kbc-card, .shop-card, .mini-game-card {
+  background: rgba(255, 255, 255, 0.95); /* slightly transparent white */
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  padding: 20px;
+}
+header{background:linear-gradient(90deg,#24476a, #1b5c7b);color:white;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.logo{font-weight:700;letter-spacing:0.4px}
+.header-right{display:flex;gap:12px;align-items:center}
+.search{padding:8px 10px;border-radius:6px;border:none;min-width:220px}
+.icon-btn{background:transparent;border:0;color:white;font-size:18px;cursor:pointer;position:relative}
+.icon-btn .badge{position:absolute;top:-6px;right:-6px;background:#ff4757;color:white;border-radius:99px;padding:2px 6px;font-size:11px}
+
+nav{display:flex;gap:6px;justify-content:center;background:var(--nav);padding:6px;flex-wrap:wrap}
+nav a{color:white;padding:10px 14px;text-decoration:none;border-radius:6px;cursor:pointer}
+nav a.active{background:var(--brand);box-shadow:0 2px 6px rgba(0,0,0,0.12)}
+
+.container{max-width:1200px;margin:20px auto;padding:0 16px}
+
+/* layout & cards */
+.row{display:flex;gap:16px;flex-wrap:wrap}
+.col{flex:1;min-width:280px}
+.card{background:var(--card);border-radius:10px;padding:14px;box-shadow:0 6px 20px rgba(18,38,63,0.06);}
+
+/* shop grid */
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.product-card{border:1px solid #e6e9ed;border-radius:8px;background:white;overflow:hidden;display:flex;flex-direction:column}
+.product-thumb{height:160px;background:#f7f7f8;display:flex;align-items:center;justify-content:center}
+.product-thumb img{max-width:100%;max-height:140px;object-fit:contain}
+.product-body{padding:12px;flex:1;display:flex;flex-direction:column;gap:8px}
+.product-title{font-weight:600;font-size:15px}
+.product-price{color:var(--brand);font-weight:700}
+.product-meta{font-size:13px;color:var(--muted)}
+
+/* product page view */
+.product-page{display:grid;grid-template-columns:360px 1fr;gap:20px}
+.product-page .product-thumb{height:320px}
+.qty-input{width:72px;padding:6px;border-radius:6px;border:1px solid #ddd}
+
+/* games */
+.games-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.memory-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.tile{aspect-ratio:1/1;background:#0ea5a4;color:white;display:flex;align-items:center;justify-content:center;font-size:22px;border-radius:8px;cursor:pointer;user-select:none}
+.tile.hidden{background:#e6e9ef;color:transparent;cursor:pointer}
+.math-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+
+/* small utilities */
+.hstack{display:flex;gap:8px;align-items:center}
+.center{text-align:center}
+.footer-note{font-size:13px;color:var(--muted);margin-top:6px}
+
+/* modal for product */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;padding:20px;z-index:40}
+.modal.open{display:flex}
+.modal-card{background:white;border-radius:10px;max-width:900px;width:100%;padding:18px;box-shadow:0 10px 40px rgba(0,0,0,0.2)}
+.close-x{cursor:pointer;padding:6px;border-radius:6px;background:#f1f1f1;display:inline-block}
+
+/* responsive */
+@media(max-width:900px){
+  .product-page{grid-template-columns:1fr}
+  .search{min-width:120px}
+  nav{justify-content:space-around}
+}
+.modal-content input:focus { border-color:#007bff; box-shadow:0 0 5px rgba(0,123,255,0.5); outline:none; }
+.modal-content button:hover { background:#0056b3; }
+@keyframes slideIn { from {transform:translateY(-50px); opacity:0;} to {transform:translateY(0); opacity:1;} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">EduVenture</div>
+  <div class="header-right">
+    <input class="search" id="searchInput" placeholder="Search courses, products..." />
+    <button class="icon-btn" title="Notifications">🔔<span class="badge" id="notifCount">2</span></button>
+    <button class="icon-btn" title="Cart" onclick="gotoTab('cart')">🛒<span class="badge" id="cartCount">0</span></button>
+    <div style="width:8px"></div>
+  </div>
+<!-- Profile Icon -->
+<span class="profile-icon" onclick="openLogin()" style="cursor:pointer; font-size:28px;">👤</span>
+</header>
+
+<nav id="mainNav">
+  <a data-tab="home" class="active" onclick="gotoTab('home')">Home</a>
+  <a data-tab="courses" onclick="gotoTab('courses')">Courses</a>
+  <a data-tab="games" onclick="gotoTab('games')">Games</a>
+  <a data-tab="dashboard" onclick="gotoTab('dashboard')">Dashboard</a>
+  <a data-tab="shop" onclick="gotoTab('shop')">Shop</a>
+  <a data-tab="cart" onclick="gotoTab('cart')">Cart</a>
+</nav>
+
+<div class="container">
+
+  <!-- HOME -->
+  <section id="home" class="card section active">
+    <h2>Welcome to SmartLearning</h2>
+    <p class="footer-note">Interactive courses, games, and study materials — all in one place.</p>
+<div id="home" class="tab active">
+
+  <!-- Mentara Team Section -->
+  <div id="mentara" style="margin-top:30px; max-width:1200px; background:#fff; padding:20px; border-radius:15px; box-shadow:0 2px 10px rgba(0,0,0,0.2);">
+    <!-- Team Logo -->
+    <div style="text-align:center; margin-bottom:20px;">
+      <img src="C:\Users\HP\OneDrive\Desktop\mentara\abc.jpeg" alt="Mentara Logo" style="width:120px; height:120px; border-radius:50%; object-fit:cover;">
+    </div>
+
+    <h3 style="text-align:center; color:#007bff; margin-bottom:10px;">Team Mentara</h3>
+    <p style="text-align:center; margin-bottom:20px;">We are a passionate team dedicated to creating innovative smart learning solutions. Our goal is to make learning interactive, fun, and effective for students everywhere.</p>
+
+    <!-- Team Members -->
+    <div style="display:flex; justify-content:center; flex-wrap:wrap; gap:20px;">
+      <div style="width:150px; text-align:center; transition: transform 0.3s; cursor:pointer;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+        <h4 style="margin:10px 0 5px;">Yash Kumar Singh</h4>
+        <p style="margin:0; font-size:14px;">Front-end Dev</p>
+        <div style="margin-top:5px;">
+          <a href="#" target="_blank">🌐</a>
+          <a href="#" target="_blank">🐦</a>
+        </div>
+      </div>
+   <div style="width:150px; text-align:center; transition: transform 0.3s; cursor:pointer;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+        <h4 style="margin:10px 0 5px;">Manisha Agrawal</h4>
+        <p style="margin:0; font-size:14px;">Team Leader</p>
+        <div style="margin-top:5px;">
+          <a href="#" target="_blank">🌐</a>
+          <a href="#" target="_blank">🐦</a>
+        </div>
+      </div>
+    <div style="display:flex; justify-content:center; flex-wrap:wrap; gap:20px;">
+      <div style="width:150px; text-align:center; transition: transform 0.3s; cursor:pointer;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+        <h4 style="margin:10px 0 5px;">Om Kant Mishra</h4>
+        <p style="margin:0; font-size:14px;">Front-end Dev</p>
+        <div style="margin-top:5px;">
+          <a href="#" target="_blank">🌐</a>
+          <a href="#" target="_blank">🐦</a>
+        </div>
+      </div>
+      <div style="width:150px; text-align:center; transition: transform 0.3s; cursor:pointer;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+        <h4 style="margin:10px 0 5px;">Grecy Rai</h4>
+        <p style="margin:0; font-size:14px;">Research Team</p>
+        <div style="margin-top:5px;">
+          <a href="#" target="_blank">🌐</a>
+          <a href="#" target="_blank">🐦</a>
+        </div>
+      </div>
+   <div style="width:150px; text-align:center; transition: transform 0.3s; cursor:pointer;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+        <h4 style="margin:10px 0 5px;">Aanya Agrawal</h4>
+        <p style="margin:0; font-size:14px;">Research Team</p>
+        <div style="margin-top:5px;">
+          <a href="#" target="_blank">🌐</a>
+          <a href="#" target="_blank">🐦</a>
+        </div>
+      </div>
+      <div style="width:150px; text-align:center; transition: transform 0.3s; cursor:pointer;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+        <h4 style="margin:10px 0 5px;">Khushi Sharma</h4>
+        <p style="margin:0; font-size:14px;">Graphics Designer</p>
+        <div style="margin-top:5px;">
+          <a href="#" target="_blank">🌐</a>
+          <a href="#" target="_blank">🐦</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+  .quote-section {
+  max-width: 1200px;
+  margin: 30px auto;
+  padding: 20px;
+  background: #f0f8ff;
+  border-left: 5px solid #0077ff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  text-align: center;
+  font-style: italic;
+}
+
+.quote-section h3 {
+  margin-bottom: 10px;
+  color: #0077ff;
+}
+
+.quote-section p {
+  font-size: 16px;
+  color: #333;
+  margin: 10px 0;
+}
+
+.quote-section button {
+  margin-top: 10px;
+  padding: 8px 15px;
+  font-size: 14px;
+  background: #0077ff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.quote-section button:hover {
+  background: #0056cc;
+}
+  .drawing-section {
+    margin: 30px auto;
+    padding: 20px;
+    max-width: 1200px;
+    background: #ffffff;
+    border: 2px solid #ddd;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  .drawing-section h2 {
+    margin-bottom: 10px;
+    color: #333;
+  }
+  .drawing-section p {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 15px;
+  }
+  .draw-btn {
+    background: #0077ff;
+    color: #fff;
+    border: none;
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  .draw-btn:hover {
+    background: #0056cc;
+  }
+</style>
+<!-- Drawing Tool Section -->
+<div class="drawing-section">
+  <h2>🖌️ Try Our Drawing Tool</h2>
+  <p>Practice creative sketches or make quick notes with our built-in drawing page.</p>
+  <button onclick="window.location.href='drawing.html'" class="draw-btn">🎨 Open Drawing Page</button>
+</div>
+  <div class="quote-section">
+  <h3>💡 Quote of the Day</h3>
+  <p id="quote"></p>
+  <button id="nextQuoteBtn">Next Quote</button>
+</div>
+<!-- KBC Quiz Game Button -->
+<div class="kbc-card">
+  <h2>❓ KBC Quiz Game</h2>
+  <p>Test your knowledge with our fun KBC-style quiz! Click below to play.</p>
+  <button onclick="window.location.href='kbc.html'">Play KBC</button>
+</div>
+  <style>
+  .kbc-card {
+  max-width: 1200px;
+  margin: 20px auto;
+  padding: 20px;
+  background: linear-gradient(to right, #ffdd00, #ff9900);
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.kbc-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+}
+
+.kbc-card h2 {
+  margin-bottom: 10px;
+  color: #fff;
+}
+
+.kbc-card p {
+  font-size: 14px;
+  color: #fff;
+  margin-bottom: 15px;
+}
+
+.kbc-card button {
+  background: #fff;
+  color: #ff9900;
+  border: none;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.kbc-card button:hover {
+  background: #ffe066;
+}
+  </style>
+<div style="display:grid; place-items:center; margin-top:50px;">
+    <div id="imageGameBtn" style="
+        width: 1140px;
+        height:160px;
+        background: linear-gradient(135deg, #ff9966, #ff5e62);
+        border-radius:25px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.35);
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+        align-items:center;
+        cursor:pointer;
+        transition: transform 0.3s, box-shadow 0.3s;
+        position: relative;
+        overflow: hidden;
+    ">
+        <h2 style="
+            color:white;
+            font-size:22px;
+            text-align:center;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+            margin:0;
+        ">Guess the Image</h2>
+        <p style="
+            color:white;
+            font-size:14px;
+            text-align:center;
+            margin-top:8px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+        ">Test your knowledge visually</p>
+        <!-- Decorative animated circle -->
+        <span style="
+            position:absolute;
+            width:100%;
+            height:100%;
+            top:0;
+            left:-100%;
+            background: rgba(255,255,255,0.2);
+            transform: skewX(-20deg);
+            transition: 0.5s;
+        " class="hoverEffect"></span>
+    </div>
+</div>
+
+<script>
+const btn = document.getElementById("imageGameBtn");
+btn.addEventListener("mouseenter", () => {
+    btn.style.transform = "scale(1.05)";
+    btn.querySelector('.hoverEffect').style.left = "100%";
+});
+btn.addEventListener("mouseleave", () => {
+    btn.style.transform = "scale(1)";
+    btn.querySelector('.hoverEffect').style.left = "-100%";
+});
+
+btn.addEventListener("click", () => {
+    window.location.href = "guess_image_game.html"; // Redirect to game page
+});
+</script>
+  </section>
+
+  <!-- COURSES -->
+  <section id="courses" class="section card" style="display:none">
+    <h2>Courses</h2>
+    <div id="courseList" class="row"></div>
+  </section>
+
+  <!-- GAMES -->
+  <section id="games" class="section card" style="display:none">
+    <h2>Games</h2>
+    <div class="games-grid">
+      <!-- Memory Match -->
+      <div class="card">
+        <h3>Memory Match</h3>
+        <p class="footer-note">Flip cards to find pairs.</p>
+        <div id="memoryGrid" class="memory-grid"></div>
+        <div style="margin-top:10px" class="hstack">
+          <button class="btn" onclick="initMemory()">Restart</button>
+          <div class="footer-note" id="memoryStatus"></div>
+        </div>
+      </div>
+
+      <!-- Math Quiz -->
+      <div class="card">
+        <h3>Math Quiz</h3>
+        <p class="footer-note">Solve simple arithmetic under time.</p>
+        <div id="mathArea">
+          <div id="mathQuestion" style="font-size:20px;margin-bottom:8px"></div>
+          <div class="hstack">
+            <input id="mathAnswer" placeholder="Your answer" style="padding:8px;border-radius:6px;border:1px solid #ddd" />
+            <button class="btn" onclick="submitMath()">Submit</button>
+          </div>
+          <div style="margin-top:8px" class="footer-note">Score: <span id="mathScore">0</span></div>
+          <div style="margin-top:10px" class="hstack">
+            <button class="btn" onclick="newMath()">New Question</button>
+            <button class="btn" onclick="resetMath()">Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Word Scramble -->
+      <div class="card">
+        <h3>Word Scramble</h3>
+        <p class="footer-note">Unscramble the word.</p>
+        <div id="scrambleArea">
+          <div id="scrambledText" style="font-size:20px;margin-bottom:8px"></div>
+          <div class="hstack">
+            <input id="scrambleAnswer" placeholder="Your guess" style="padding:8px;border-radius:6px;border:1px solid #ddd" />
+            <button class="btn" onclick="checkScramble()">Check</button>
+          </div>
+          <div style="margin-top:8px" class="footer-note">Tip: Case insensitive</div>
+          <div style="margin-top:10px" class="hstack">
+            <button class="btn" onclick="newScramble()">New Word</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pose Game -->
+      <div class="card">
+        <h3>Pose Game</h3>
+        <p class="footer-note">Allow camera access and match simple poses to score.</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start">
+          <div class="pose-container card" style="padding:0;width:320px">
+            <video id="poseVideo" width="320" height="240" autoplay muted playsinline style="background:#000"></video>
+            <canvas id="poseCanvas" width="320" height="240" style="position:relative;z-index:2"></canvas>
+          </div>
+          <div style="flex:1;min-width:180px">
+            <div>Level: <strong id="poseLevel">1</strong></div>
+            <div>Time left: <strong id="poseTimer">15</strong>s</div>
+            <div style="margin-top:8px">Pose Score: <strong id="poseScore">0</strong></div>
+            <div style="margin-top:8px" class="footer-note">Target: <span id="poseTarget">Hands Up</span></div>
+            <div style="margin-top:10px" class="hstack">
+              <button class="btn" onclick="startPoseGame()">Start</button>
+              <button class="btn" onclick="stopPoseGame()">Stop</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section id="dashboard" class="section card" style="display:none">
+    <h2>Dashboard</h2>
+    <p>User: <strong>GuestXYZ</strong></p>
+    <p>Subscribed: <span id="subscribedText">None</span></p>
+    <p>Total Game Score: <strong id="totalGameScore">0</strong></p>
+    <p>Cart Items: <strong id="dashboardCartCount">0</strong></p>
+    <!-- Dashboard username -->
+    <p>Welcome, <span id="usernameDisplay">GuestXYZ</span></p>
+  </section>
+
+  <!-- SHOP (grid) -->
+  <section id="shop" class="section card" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h2>Shop — Study Materials</h2>
+      <input id="shopSearch" placeholder="Search products..." style="padding:8px;border-radius:6px;border:1px solid #ddd" oninput="renderShop()" />
+    </div>
+    <div style="margin-top:12px" id="shopGridContainer">
+      <div id="shopGrid" class="shop-grid"></div>
+    </div>
+  </section>
+
+  <!-- PRODUCT PAGE (in-app page) -->
+  <section id="productPage" class="section card" style="display:none">
+    <button onclick="gotoTab('shop')" class="btn" style="margin-bottom:12px">← Back to Shop</button>
+    <div id="prodView" class="product-page"></div>
+  </section>
+
+  <!-- CART -->
+  <section id="cart" class="section card" style="display:none">
+    <h2>Your Cart</h2>
+    <div id="cartItems"></div>
+    <div style="margin-top:12px" class="hstack">
+      <div>Total: <strong id="cartTotal">$0</strong></div>
+      <div style="flex:1"></div>
+      <button class="btn" onclick="checkout()">Checkout</button>
+    </div>
+  </section>
+
+</div>
+
+<!-- PRODUCT MODAL (alternative quick view) -->
+<div id="productModal" class="modal">
+  <div class="modal-card">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h3 id="modalTitle">Product</h3>
+      <span class="close-x" onclick="closeModal()">✕</span>
+    </div>
+    <div style="display:flex;gap:14px;margin-top:12px;flex-wrap:wrap">
+      <div style="flex:0 0 220px"><img id="modalImage" src="" alt="" style="width:100%;border-radius:6px"/></div>
+      <div style="flex:1">
+        <div id="modalDesc"></div>
+        <div style="margin-top:14px">Price: <strong id="modalPrice"></strong></div>
+        <div style="margin-top:12px">
+          <label>Quantity: <input id="modalQty" type="number" value="1" min="1" style="width:70px;padding:6px;border-radius:6px;border:1px solid #ddd" /></label>
+        </div>
+        <div style="margin-top:12px" class="hstack">
+          <button class="btn" onclick="modalAddToCart()">Add to Cart</button>
+          <button class="btn" onclick="closeModal()" style="background:#ddd;color:#111">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* --------------------------
+   Data models (products, courses)
+   -------------------------- */
+const products = [
+  {id:101, title:"Physics — Concepts & Practice", price:25.99, rating:4.6, image:"https://images.pexels.com/photos/414422/pexels-photo-414422.jpeg?auto=compress&h=150", desc:"Comprehensive Physics guide with solved examples."},
+  {id:102, title:"Chemistry Lab Kit", price:39.99, rating:4.8, image:"https://images.pexels.com/photos/256541/pexels-photo-256541.jpeg?auto=compress&h=150", desc:"Beginner's chemistry experiments kit."},
+  {id:103, title:"Math Workbook — Algebra", price:19.50, rating:4.5, image:"https://images.pexels.com/photos/267885/pexels-photo-267885.jpeg?auto=compress&h=150", desc:"Practice problems and solutions for algebra."},
+  {id:104, title:"Biology Charts Pack", price:14.00, rating:4.2, image:"https://images.pexels.com/photos/256491/pexels-photo-256491.jpeg?auto=compress&h=150", desc:"Full-color charts covering core biology topics."},
+  {id:105, title:"Programming Fundamentals", price:29.00, rating:4.7, image:"https://images.pexels.com/photos/1181244/pexels-photo-1181244.jpeg?auto=compress&h=150", desc:"Intro to programming using modern examples."}
+];
+
+const courses = [
+  {id:1, title:"Math Basics", desc:"Foundations, arithmetic, fractions."},
+  {id:2, title:"Intro to Science", desc:"Key science concepts & experiments."},
+  {id:3, title:"Beginner Programming", desc:"Programming fundamentals with projects."}
+];
+
+/* --------------------------
+   App state
+   -------------------------- */
+let appState = {
+  cart: [], // {id, qty}
+  subscribed: [], // course ids
+  totalGameScore: 0,
+  pose: {
+    running: false,
+    detector: null,
+    score: 0,
+    level: 0,
+    timer: 15,
+    timerId: null,
+    currentTarget: null,
+    poseLoopId: null
+  }
+};
+
+/* --------------------------
+   Navigation
+   -------------------------- */
+function hideAllSections(){
+  document.querySelectorAll('.section').forEach(s=>s.style.display='none');
+  document.querySelectorAll('nav a').forEach(a=>a.classList.remove('active'));
+}
+function gotoTab(tab){
+  hideAllSections();
+  const el = document.getElementById(tab);
+  if(!el) return;
+  el.style.display='block';
+  document.querySelectorAll(`nav a[data-tab="${tab}"], nav a`).forEach(a=>{
+    if(a.dataset.tab === tab) a.classList.add('active');
+  });
+  // update dashboard values when open
+  if(tab==='dashboard') updateDashboard();
+  if(tab==='cart') renderCart();
+  if(tab==='shop') renderShop();
+}
+
+/* --------------------------
+   Courses rendering
+   -------------------------- */
+function renderCourses(){
+  const container = document.getElementById('courseList');
+  container.innerHTML = '';
+  courses.forEach(c=>{
+    const card = document.createElement('div');
+    card.className = 'card col';
+    card.innerHTML = `<h4>${c.title}</h4><p class="footer-note">${c.desc}</p>
+      <div class="hstack"><button class="btn" onclick="subscribeCourse(${c.id})">${appState.subscribed.includes(c.id)?'Subscribed':'Subscribe'}</button></div>`;
+    container.appendChild(card);
+  });
+}
+function subscribeCourse(id){
+  if(!appState.subscribed.includes(id)) appState.subscribed.push(id);
+  renderCourses();
+}
+
+/* --------------------------
+   Shop rendering & product page
+   -------------------------- */
+function renderShop(){
+  const grid = document.getElementById('shopGrid');
+  const q = document.getElementById('shopSearch').value.trim().toLowerCase();
+  grid.innerHTML = '';
+  products.filter(p => !q || p.title.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q)).forEach(p=>{
+    const card = document.createElement('div');
+    card.className = 'product-card';
+    card.innerHTML = `
+      <div class="product-thumb"><img src="${p.image}" alt="${p.title}"></div>
+      <div class="product-body">
+        <div class="product-title">${p.title}</div>
+        <div class="product-meta">${p.rating} ★</div>
+        <div style="flex:1"></div>
+        <div class="product-price">$${p.price.toFixed(2)}</div>
+        <div style="margin-top:8px" class="hstack">
+          <button class="btn" onclick="openProductPage(${p.id})">View</button>
+          <button class="btn" onclick="addToCart(${p.id},1)">Add to Cart</button>
+        </div>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+function openProductPage(id){
+  const p = products.find(x=>x.id===id);
+  if(!p) return;
+  const view = document.getElementById('prodView');
+  view.innerHTML = `
+    <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
+      <div style="flex:0 0 340px"><div class="product-thumb"><img src="${p.image}" alt="${p.title}"></div></div>
+      <div style="flex:1">
+        <h2>${p.title}</h2>
+        <div class="product-meta">${p.rating} ★</div>
+        <p style="margin-top:10px">${p.desc}</p>
+        <div style="margin-top:12px">Price: <strong>$${p.price.toFixed(2)}</strong></div>
+        <div style="margin-top:12px" class="hstack">
+          <label>Qty: <input id="prodQty" class="qty-input" type="number" value="1" min="1" /></label>
+          <button class="btn" onclick="addToCart(${p.id}, parseInt(document.getElementById('prodQty').value))">Add to Cart</button>
+        </div>
+      </div>
+    </div>
+  `;
+  hideAllSections();
+  document.getElementById('productPage').style.display='block';
+}
+
+/* --------------------------
+   Product modal (quick view)
+   -------------------------- */
+let modalProductId = null;
+function openModalFor(id){
+  const p = products.find(x=>x.id===id);
+  if(!p) return;
+  modalProductId = id;
+  document.getElementById('modalTitle').innerText = p.title;
+  document.getElementById('modalImage').src = p.image;
+  document.getElementById('modalDesc').innerText = p.desc;
+  document.getElementById('modalPrice').innerText = `$${p.price.toFixed(2)}`;
+  document.getElementById('modalQty').value = 1;
+  document.getElementById('productModal').classList.add('open');
+}
+function closeModal(){ document.getElementById('productModal').classList.remove('open'); }
+function modalAddToCart(){
+  const qty = parseInt(document.getElementById('modalQty').value)||1;
+  addToCart(modalProductId, qty);
+  closeModal();
+}
+
+/* --------------------------
+   Cart management
+   -------------------------- */
+function addToCart(productId, qty=1){
+  const entry = appState.cart.find(i=>i.id===productId);
+  if(entry) entry.qty += qty;
+  else appState.cart.push({id:productId, qty});
+  renderCart();
+}
+function removeFromCart(productId){
+  appState.cart = appState.cart.filter(i=>i.id !== productId);
+  renderCart();
+}
+function updateQty(productId, newQty){
+  const e = appState.cart.find(i=>i.id===productId);
+  if(!e) return;
+  e.qty = newQty;
+  if(e.qty <= 0) removeFromCart(productId);
+  renderCart();
+}
+function renderCart(){
+  const cont = document.getElementById('cartItems');
+  cont.innerHTML = '';
+  let total = 0;
+  if(appState.cart.length===0){
+    cont.innerHTML = '<p class="footer-note">Your cart is empty</p>';
+  } else {
+    appState.cart.forEach(item=>{
+      const p = products.find(x=>x.id===item.id);
+      const div = document.createElement('div');
+      div.className = 'cart-item';
+      div.innerHTML = `
+        <div style="display:flex;gap:10px;align-items:center">
+          <img src="${p.image}" style="width:70px;height:70px;object-fit:cover;border-radius:6px">
+          <div>
+            <div style="font-weight:600">${p.title}</div>
+            <div class="product-meta">$${p.price.toFixed(2)}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="number" min="1" value="${item.qty}" style="width:72px;padding:6px;border:1px solid #ddd;border-radius:6px" onchange="updateQty(${p.id}, parseInt(this.value))" />
+          <div style="min-width:80px;text-align:right">$${(p.price*item.qty).toFixed(2)}</div>
+          <button class="btn" onclick="removeFromCart(${p.id})" style="background:#ff6b6b">Remove</button>
+        </div>
+      `;
+      cont.appendChild(div);
+      total += p.price * item.qty;
+    });
+  }
+  document.getElementById('cartTotal').innerText = `$${total.toFixed(2)}`;
+  document.getElementById('cartCount').innerText = appState.cart.reduce((s,i)=>s+i.qty,0);
+  document.getElementById('dashboardCartCount').innerText = appState.cart.length;
+}
+
+/* Checkout (dummy) */
+function checkout(){
+  if(appState.cart.length===0){ alert("Your cart is empty"); return; }
+  const total = appState.cart.reduce((s,i)=> s + (products.find(p=>p.id===i.id).price * i.qty), 0);
+  alert(`Checkout — Total: $${total.toFixed(2)} (dummy)`);
+  appState.cart = [];
+  renderCart();
+}
+
+/* --------------------------
+   Games: Memory Match
+   -------------------------- */
+let memory = {values:[],flipped:[],matchedCount:0};
+function initMemory(){
+  memory.values = ['A','A','B','B','C','C','D','D'];
+  memory.values = memory.values.sort(()=>Math.random()-0.5);
+  memory.flipped = [];
+  memory.matchedCount = 0;
+  const grid = document.getElementById('memoryGrid');
+  grid.innerHTML = '';
+  memory.values.forEach((v,i)=>{
+    const tile = document.createElement('div');
+    tile.className = 'tile';
+    tile.id = 'mem_'+i;
+    tile.textContent = ''; // hidden initially
+    tile.style.background = '#0ea5a4';
+    tile.onclick = ()=>memoryFlip(tile, i);
+    grid.appendChild(tile);
+  });
+  document.getElementById('memoryStatus').innerText = '';
+}
+function memoryFlip(tile, index){
+  if(tile.dataset.revealed === '1') return;
+  if(memory.flipped.length >= 2) return;
+  tile.textContent = memory.values[index];
+  tile.style.background = '#fff';
+  tile.style.color = '#000';
+  tile.dataset.revealed = '1';
+  memory.flipped.push({tile, val:memory.values[index], idx:index});
+  if(memory.flipped.length === 2){
+    const [a,b] = memory.flipped;
+    if(a.val === b.val){
+      // match
+      a.tile.style.background = '#34d399';
+      b.tile.style.background = '#34d399';
+      memory.matchedCount += 2;
+      memory.flipped = [];
+      if(memory.matchedCount === memory.values.length){
+        document.getElementById('memoryStatus').innerText = 'You won!';
+        // reward score
+        appState.totalGameScore += 10;
+        updateDashboardScore();
+      }
+    } else {
+      // hide again after delay
+      setTimeout(()=>{
+        a.tile.textContent = '';
+        a.tile.style.background = '#0ea5a4';
+        a.tile.style.color = 'transparent';
+        a.tile.dataset.revealed = '0';
+        b.tile.textContent = '';
+        b.tile.style.background = '#0ea5a4';
+        b.tile.style.color = 'transparent';
+        b.tile.dataset.revealed = '0';
+        memory.flipped = [];
+      },700);
+    }
+  }
+}
+
+/* --------------------------
+   Games: Math Quiz (simple)
+   -------------------------- */
+let math = {score:0, a:0, b:0};
+function newMath(){
+  math.a = Math.floor(Math.random()*20);
+  math.b = Math.floor(Math.random()*20);
+  document.getElementById('mathQuestion').innerText = `${math.a} + ${math.b} = ?`;
+  document.getElementById('mathAnswer').value = '';
+}
+function submitMath(){
+  const val = Number(document.getElementById('mathAnswer').value);
+  if(val === math.a + math.b){
+    math.score++;
+    appState.totalGameScore++;
+    updateDashboardScore();
+    alert('Correct!');
+  } else {
+    alert('Wrong — try next');
+  }
+  document.getElementById('mathScore').innerText = math.score;
+  newMath();
+}
+function resetMath(){
+  math.score = 0; document.getElementById('mathScore').innerText = 0; newMath();
+}
+
+/* --------------------------
+   Games: Word Scramble
+   -------------------------- */
+const scrambleWords = ['physics','chemistry','biology','mathematics','algebra','geometry'];
+let currentScramble = '';
+function newScramble(){
+  const w = scrambleWords[Math.floor(Math.random()*scrambleWords.length)];
+  currentScramble = w;
+  const scrambled = w.split('').sort(()=>Math.random()-0.5).join('');
+  document.getElementById('scrambledText').innerText = scrambled;
+  document.getElementById('scrambleAnswer').value = '';
+}
+function checkScramble(){
+  const guess = document.getElementById('scrambleAnswer').value.trim().toLowerCase();
+  if(guess === currentScramble){
+    alert('Correct!');
+    appState.totalGameScore++;
+    updateDashboardScore();
+    newScramble();
+  } else {
+    alert('Wrong — try again.');
+  }
+}
+
+/* --------------------------
+   Dashboard update
+   -------------------------- */
+function updateDashboard(){
+  document.getElementById('subscribedText').innerText = appState.subscribed.length ? appState.subscribed.map(id=>courses.find(c=>c.id===id).title).join(', ') : 'None';
+  document.getElementById('totalGameScore').innerText = appState.totalGameScore;
+  document.getElementById('dashboardCartCount').innerText = appState.cart.length;
+}
+function updateDashboardScore(){
+  document.getElementById('totalGameScore').innerText = appState.totalGameScore;
+}
+
+/* --------------------------
+   Pose Game: MoveNet-based simple matching
+   -------------------------- */
+const poseTargets = [
+  {name:'Hands Up', check: (k)=> k['left_wrist'] && k['right_wrist'] && k['left_wrist'].y < k['nose'].y && k['right_wrist'].y < k['nose'].y},
+  {name:'T-Pose', check: (k)=> k['left_wrist'] && k['right_wrist'] && k['left_shoulder'] && k['right_shoulder'] && Math.abs(k['left_wrist'].y - k['left_shoulder'].y) < 50 && Math.abs(k['right_wrist'].y - k['right_shoulder'].y) < 50},
+  {name:'Squat', check: (k)=> k['left_knee'] && k['left_hip'] && k['right_knee'] && k['right_hip'] && k['left_knee'].y > k['left_hip'].y && k['right_knee'].y > k['right_hip'].y}
+];
+
+async function startPoseGame(){
+  if(appState.pose.running) return;
+  try {
+    const detector = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet);
+    appState.pose.detector = detector;
+  } catch(e){
+    console.warn('MoveNet load failed', e);
+  }
+  appState.pose.running = true;
+  appState.pose.score = 0;
+  appState.pose.level = 0;
+  appState.pose.timer = 15;
+  setPoseTarget(0);
+  document.getElementById('poseScore').innerText = 0;
+  startPoseCamera();
+  poseTick();
+}
+
+function stopPoseGame(){
+  appState.pose.running = false;
+  if(appState.pose.poseLoopId) cancelAnimationFrame(appState.pose.poseLoopId);
+  if(appState.pose.detector){ /* keep detector loaded if wanted */ }
+  // stop video stream (optional)
+  const v = document.getElementById('poseVideo');
+  if(v && v.srcObject){
+    v.srcObject.getTracks().forEach(t=>t.stop());
+    v.srcObject = null;
+  }
+}
+
+function setPoseTarget(level){
+  appState.pose.level = level % poseTargets.length;
+  appState.pose.currentTarget = poseTargets[appState.pose.level];
+  document.getElementById('poseTarget').innerText = appState.pose.currentTarget.name;
+  document.getElementById('poseLevel').innerText = appState.pose.level + 1;
+  document.getElementById('poseTimer').innerText = appState.pose.timer;
+}
+
+async function startPoseCamera(){
+  const video = document.getElementById('poseVideo');
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({video:{width:640,height:480}, audio:false});
+    video.srcObject = stream;
+    await video.play();
+    // set canvas size
+    const canvas = document.getElementById('poseCanvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    runPoseLoop();
+  } catch(e){
+    alert('Could not start camera: ' + e.message);
+    appState.pose.running = false;
+  }
+}
+
+async function runPoseLoop(){
+  if(!appState.pose.running) return;
+  const video = document.getElementById('poseVideo');
+  const canvas = document.getElementById('poseCanvas');
+  const ctx = canvas.getContext('2d');
+  const detector = appState.pose.detector;
+  if(!detector){
+    // try to load if not loaded
+    try { appState.pose.detector = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet); }
+    catch(e){ console.warn(e); }
+  }
+  async function loop(){
+    if(!appState.pose.running) return;
+    if(detector && video.readyState >= 2){
+      const poses = await detector.estimatePoses(video);
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      if(poses && poses[0] && poses[0].keypoints){
+        // draw keypoints simplified
+        const kpts = poses[0].keypoints;
+        // map by name
+        const map = {}; kpts.forEach(p=>{ map[p.name] = p; });
+        // draw circles
+        ctx.fillStyle = 'rgba(255,0,0,0.9)';
+        for(const p of kpts){
+          if(p.x && p.y) ctx.beginPath(), ctx.arc(p.x, p.y, 5, 0, Math.PI*2), ctx.fill();
+        }
+        // check target
+        const checkMap = {};
+        for(const name in map) checkMap[name] = map[name];
+        const target = appState.pose.currentTarget;
+        if(target && target.check && target.check(checkMap)){
+          // matched
+          appState.pose.score += 5;
+          document.getElementById('poseScore').innerText = appState.pose.score;
+          // advance level
+          setPoseTarget(appState.pose.level + 1);
+          // reset timer
+          appState.pose.timer = 15;
+        }
+      }
+    }
+    appState.pose.poseLoopId = requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+/* timer tick for pose */
+function poseTick(){
+  if(!appState.pose.running) return;
+  appState.pose.timer--;
+  document.getElementById('poseTimer').innerText = appState.pose.timer;
+  if(appState.pose.timer <= 0){
+    // next level
+    setPoseTarget(appState.pose.level + 1);
+    appState.pose.timer = 15;
+  }
+  // update every second
+  appState.pose.timerId = setTimeout(poseTick, 1000);
+}
+
+/* stop timer when stopping */
+function stopPoseTimers(){
+  if(appState.pose.timerId) clearTimeout(appState.pose.timerId);
+  if(appState.pose.poseLoopId) cancelAnimationFrame(appState.pose.poseLoopId);
+}
+
+/* --------------------------
+   Initialization
+   -------------------------- */
+function initApp(){
+  renderCourses();
+  renderShop();
+  initMemory(); // initial memory
+  newMath();
+  newScramble();
+  renderCart();
+  updateDashboard();
+}
+initApp();
+
+/* helper: shortcut gotoTab from nav */
+function gotoTab(tab){
+  hideAllSections();
+  document.getElementById(tab).style.display = 'block';
+  // highlight nav link
+  document.querySelectorAll('nav a').forEach(a=> a.classList.toggle('active', a.dataset.tab===tab));
+  // update data on show
+  if(tab === 'shop') renderShop();
+  if(tab === 'dashboard') updateDashboard();
+  if(tab === 'cart') renderCart();
+}
+
+/* expose a few functions to global scope for button inline handlers */
+window.gotoTab = gotoTab;
+window.addToCart = addToCart;
+window.openModalFor = openModalFor;
+window.openProductPage = openProductPage;
+window.initMemory = initMemory;
+window.startPoseGame = startPoseGame;
+window.stopPoseGame = stopPoseGame;
+window.addToCart = addToCart;
+window.renderShop = renderShop;
+window.subscribeCourse = subscribeCourse;
+window.removeFromCart = removeFromCart;
+window.updateQty = updateQty;
+window.checkout = checkout;
+window.openModalFor = openModalFor;
+window.modalAddToCart = modalAddToCart;
+window.closeModal = closeModal;
+
+/* keyboard: search */
+document.getElementById('searchInput').addEventListener('keydown',(e)=>{
+  if(e.key==='Enter'){
+    gotoTab('shop');
+    document.getElementById('shopSearch').value = e.target.value;
+    renderShop();
+  }
+});
+</script>
+<script>
+function openLogin() { document.getElementById("loginModal").style.display="flex"; }
+function closeLogin() { document.getElementById("loginModal").style.display="none"; }
+function togglePassword() {
+  const pw = document.getElementById("password");
+  pw.type = pw.type==="password" ? "text" : "password";
+}
+function submitLogin() {
+  const user = document.getElementById("username").value.trim();
+  const pass = document.getElementById("password").value.trim();
+  if(!user){ alert("Enter username"); return; }
+  if(!pass){ alert("Enter password"); return; }
+  document.getElementById("usernameDisplay").innerText = user;
+  alert("Welcome "+user+"!");
+  closeLogin();
+}
+</script>
+  <script>
+  // List of quotes
+const quotes = [
+  "Education is the most powerful weapon which you can use to change the world. – Nelson Mandela",
+  "The beautiful thing about learning is nobody can take it away from you. – B.B. King",
+  "Tell me and I forget. Teach me and I remember. Involve me and I learn. – Benjamin Franklin",
+  "Learning never exhausts the mind. – Leonardo da Vinci",
+  "The more that you read, the more things you will know. – Dr. Seuss",
+  "Live as if you were to die tomorrow. Learn as if you were to live forever. – Mahatma Gandhi",
+  "Intelligence plus character—that is the goal of true education. – Martin Luther King Jr."
+];
+
+// Function to display a random quote
+function showRandomQuote() {
+  const quoteElement = document.getElementById("quote");
+  const randomIndex = Math.floor(Math.random() * quotes.length);
+  quoteElement.textContent = quotes[randomIndex];
+}
+
+// Display a quote on page load
+showRandomQuote();
+
+// Handle Next Quote button click
+document.getElementById("nextQuoteBtn").addEventListener("click", showRandomQuote);
+  </script>
+<script>
+// When user clicks the "Create Account" button
+document.getElementById("registerBtn").addEventListener("click", function() {
+    // Collect values from div inputs
+    const fullname = document.getElementById("fullname").value;
+    const email = document.getElementById("email").value;
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+
+    // Basic validation (optional)
+    if (!fullname || !email || !username || !password) {
+        alert("Please fill in all fields.");
+        return;
+    }
+
+    // Send data to PHP using fetch POST
+    fetch("create_account.php", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: `fullname=${encodeURIComponent(fullname)}&email=${encodeURIComponent(email)}&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+    })
+    .then(response => response.text())
+    .then(data => {
+        // Show response from PHP
+        alert(data);
+        // Optionally clear fields after success
+        // document.getElementById("fullname").value = "";
+        // document.getElementById("email").value = "";
+        // document.getElementById("username").value = "";
+        // document.getElementById("password").value = "";
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        alert("Something went wrong. Try again!");
+    });
+});
+</script>
+<script>
+// When user clicks the "Login" button
+document.getElementById("loginBtn").addEventListener("click", function() {
+    // Collect input values from divs
+    const username = document.getElementById("Username").value;
+    const password = document.getElementById("loginPassword").value;
+
+    // Basic validation
+    if (!username || !password) {
+        alert("Please fill in all fields.");
+        return;
+    }
+
+    // Send data to PHP using fetch POST
+    fetch("loginphp", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+    })
+    .then(response => response.text())
+    .then(data => {
+        // Show PHP response (success or error)
+        alert(data);
+
+        // Optional: redirect on successful login
+        if (data.toLowerCase().includes("login successful")) {
+            window.location.href = "dashboard.php"; // change to your dashboard page
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        alert("Something went wrong. Try again!");
+    });
+});
+</script>
+<!-- Login Modal -->
+<div id="loginModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:center;">
+  <div class="modal-content" style="background:#fff; padding:30px; border-radius:15px; width:350px; max-width:90%; text-align:center; position:relative; box-shadow:0 8px 25px rgba(0,0,0,0.3); transform:translateY(-50px); opacity:0; animation: slideIn 0.3s forwards;">
+    <span class="close" onclick="closeLogin()" style="position:absolute; top:15px; right:20px; cursor:pointer; font-size:22px;">&times;</span>
+    <h2 style="margin-bottom:25px; color:#007bff;">Login</h2>
+    <input type="text" id="username" placeholder="Username" style="margin:10px 0; padding:12px; width:90%; border-radius:8px; border:1px solid #ccc; transition:0.3s;">
+    <div style="position:relative; margin-bottom:15px;">
+      <input type="password" id="password" placeholder="Password" style="padding:12px; width:90%; border-radius:8px; border:1px solid #ccc; transition:0.3s;">
+      <span onclick="togglePassword()" style="position:absolute; right:20px; top:12px; cursor:pointer;">👁️</span>
+    </div>
+    <button id ="loginBtn" onclick="submitLogin()" style="padding:12px 25px; margin-top:10px; cursor:pointer; border:none; background:#007bff; color:white; border-radius:8px; font-size:16px; transition:0.3s;">Login</button>
+<button onclick="window.location.href='register.html'" 
+        style="padding:10px 20px; background:#65d6ce; color:white; border:none; border-radius:6px; cursor:pointer; font-size:16px;">
+  Create New Account
+</button>
+  </div>
+</div>
+</body>
+</html>
