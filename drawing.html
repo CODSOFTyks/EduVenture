@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Drawing Page</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      background: #f8f9fa;
+    }
+    h1 {
+      margin-bottom: 10px;
+    }
+    canvas {
+      border: 2px solid #333;
+      background: #fff;
+      cursor: crosshair;
+    }
+    .controls {
+      margin: 15px 0;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    button, input[type="color"], input[type="range"] {
+      padding: 8px 12px;
+      font-size: 14px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+    }
+    button {
+      background: #0077ff;
+      color: #fff;
+      border: none;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: #0056cc;
+    }
+    .back-btn {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      background: #444;
+    }
+  </style>
+</head>
+<body>
+  <button class="back-btn" onclick="window.location.href='nsns.html'">⬅ Back to App</button>
+  <h1>Mini Paint App</h1>
+
+  <div class="controls">
+    <label>🎨 Color: <input type="color" id="colorPicker" value="#222222"></label>
+    <label>✏️ Size: <input type="range" id="sizePicker" min="1" max="20" value="3"></label>
+    <button onclick="usePen()">Pen</button>
+    <button onclick="useEraser()">Eraser</button>
+    <button onclick="clearCanvas()">Clear</button>
+    <button onclick="saveDrawing()">💾 Save</button>
+  </div>
+
+  <canvas id="drawingCanvas" width="800" height="500"></canvas>
+
+  <script>
+    const canvas = document.getElementById("drawingCanvas");
+    const ctx = canvas.getContext("2d");
+    let drawing = false;
+    let penColor = document.getElementById("colorPicker").value;
+    let penSize = document.getElementById("sizePicker").value;
+    let erasing = false;
+
+    canvas.addEventListener("mousedown", () => drawing = true);
+    canvas.addEventListener("mouseup", () => {
+      drawing = false;
+      ctx.beginPath();
+    });
+    canvas.addEventListener("mousemove", draw);
+
+    document.getElementById("colorPicker").addEventListener("change", e => penColor = e.target.value);
+    document.getElementById("sizePicker").addEventListener("input", e => penSize = e.target.value);
+
+    function draw(event) {
+      if (!drawing) return;
+      ctx.lineWidth = penSize;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = erasing ? "#fff" : penColor;
+
+      ctx.lineTo(event.offsetX, event.offsetY);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(event.offsetX, event.offsetY);
+    }
+
+    function clearCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function usePen() {
+      erasing = false;
+    }
+
+    function useEraser() {
+      erasing = true;
+    }
+
+    function saveDrawing() {
+      const link = document.createElement("a");
+      link.download = "my_drawing.png";
+      link.href = canvas.toDataURL();
+      link.click();
+    }
+  </script>
+</body>
+</html>

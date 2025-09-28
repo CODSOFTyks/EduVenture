@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Create Account</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #65d6ce, #ff7eb3);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .register-box {
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      text-align: center;
+      width: 320px;
+    }
+    .register-box h2 {
+      margin-bottom: 15px;
+    }
+    .register-box input {
+      width: 90%;
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    .register-box button {
+      margin-top: 10px;
+      width: 95%;
+      padding: 10px;
+      background: #65d6ce;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .register-box button:hover {
+      background: #4bb3a7;
+    }
+    .back-btn {
+      margin-top: 12px;
+      background: #ff7eb3;
+    }
+    .back-btn:hover {
+      background: #e567a0;
+    }
+  </style>
+</head>
+<body>
+  <div class="register-box">
+    <h2>Create New Account</h2>
+    <form>
+      <input type="text" placeholder="Full Name" required><br>
+      <input type="email" placeholder="Email" required><br>
+      <input type="text" placeholder="Username" required><br>
+      <input type="password" placeholder="Password" required><br>
+      <button type="submit">Register</button>
+    </form>
+    <button class="back-btn" onclick="window.location.href='nsns.html'">
+      Back to Login
+    </button>
+  </div>
+</body>
+</html>
